@@ -1,0 +1,88 @@
+---
+title: "Interactive Voter Model Metrics"
+author: "Anika Cartas"
+date: "Wednesday, February 25, 2015"
+output: html_document
+runtime: shiny
+---
+
+This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
+
+First, load in my data and manipulate.
+
+```{r}
+library(ggplot2)
+stats = read.csv("stats_all.csv")
+
+stats01 = subset(stats, class == 0 | class == 1)
+mut = subset(stats, class > 1)
+
+mutMax = aggregate(mut, by=list(mut$pm), FUN=max)
+mutMean = aggregate(mut, by=list(mut$pm), FUN=mean)
+mutMin = aggregate(mut, by=list(mut$pm), FUN=min)
+
+mutMax$class = "M.max"
+mutMean$class = "M.mean"
+mutMin$class = "M.min"
+
+#recombine
+stats = rbind(stats01,mutMax[-1],mutMean[-1],mutMin[-1])
+
+stats$class = factor(stats$class) #to categorize classes for plotting
+```
+
+***
+
+###Plotting the results for larger y values.
+
+```{r, echo=FALSE}
+inputPanel(
+  sliderInput("ylim_l", label = "Y Range (Large)", min=0, max=800, value=c(0,800)),
+  sliderInput("xlim2", label = "X Range", min=0, max=0.01, value=c(0,0.01)),
+  checkboxGroupInput("style2",label = "Style", choices=c("Points"= "point","Lines" ="line"),selected=c("point")),
+  selectInput("metric",label="Metric",choices=colnames(stats)[4:40], selected="max.patch.area")
+  #checkboxGroupInput("class",label="Classes",choices=c("0"=0,"1"=1,"M"=2))
+)
+
+renderPlot({
+  qplot(pm, stats[,input$metric], data=stats, color=class, geom=input$style2, main="Large Y Values: Results after 150 iterations",xlim=input$xlim2, ylim=input$ylim_l,ylab=input$metric) 
+})
+```
+
+***
+
+###Plotting the results for smaller y values. 
+
+Didn't have time to figure out how to integrate with the above example.
+
+```{r,echo=FALSE}
+inputPanel(
+  sliderInput("ylim_s", label = "Y Range (Small)", min=0, max=1, value=c(0,1)),
+  sliderInput("xlim3", label = "X Range", min=0, max=0.01, value=c(0,0.01)),
+  checkboxGroupInput("style3",label = "Style", choices=c("Points"= "point","Lines" ="line"),selected=c("point")),
+  selectInput("metric3",label="Metric",choices=colnames(stats)[4:40], selected="prop.landscape")
+  #checkboxGroupInput("class",label="Classes",choices=c("0"=0,"1"=1,"M"=2))
+)
+
+
+renderPlot({
+  qplot(pm, stats[,input$metric3], data=stats, color=class, geom=input$style2, main="Small Y Values: Results after 150 iterations",xlim=input$xlim3, ylim=input$ylim_s,ylab=input$metric3) 
+})
+```
+
+###The code for the above sections
+
+In RStudio, create a .Rmd presentation and select shiny. Basic tutorial page will run you through this, it's really easy to use!
+
+```{r, eval=FALSE}
+inputPanel(
+  sliderInput("ylim_l", label = "Y Range (Large)", min=0, max=800, value=c(0,800)),
+  sliderInput("xlim2", label = "X Range", min=0, max=0.01, value=c(0,0.01)),
+  checkboxGroupInput("style2",label = "Style", choices=c("Points"= "point","Lines" ="line"),selected=c("point")),
+  selectInput("metric",label="Metric",choices=colnames(stats)[4:40], selected="max.patch.area")
+  #checkboxGroupInput("class",label="Classes",choices=c("0"=0,"1"=1,"M"=2))
+)
+
+renderPlot({
+  qplot(pm, stats[,input$metric], data=stats, color=class, geom=input$style3, main="Large Y Values: Results after 150 iterations",xlim=input$xlim2, ylim=input$ylim_l,ylab=input$metric) 
+})
